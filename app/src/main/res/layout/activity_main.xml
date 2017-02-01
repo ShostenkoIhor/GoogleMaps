@@ -18,30 +18,80 @@
             <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:background="@color/colorPrimary"
-                >
-                <EditText
+                android:layout_height="?attr/actionBarSize">
+                <SearchView
+                    android:id="@+id/svPlaces"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:id="@+id/etSearch"/>
-
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/background_search_view" />
 
             </android.support.v7.widget.Toolbar>
 
-
+            <android.support.design.widget.TabLayout
+                android:id="@+id/tab"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
         </android.support.design.widget.AppBarLayout>
-    </android.support.design.widget.CoordinatorLayout>
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <fragment
+                android:id="@+id/mapView"
+                android:name="com.google.android.gms.maps.MapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/rvPlaces"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="60dp"
+                android:background="@drawable/background_search_view"
+                android:scrollbars="vertical" />
+        </FrameLayout>
 
+        <com.sa90.materialarcmenu.ArcMenu
+            android:id="@+id/arcMenu"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            app:menu_open="arc_left"
+            app:menu_scr="@drawable/ic_cast_dark">
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbSattelite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_cast_dark" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbNormal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_cast_dark" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbHybird"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_cast_dark" />
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbTerrain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_cast_dark" />
+        </com.sa90.materialarcmenu.ArcMenu>
+
+
+    </android.support.design.widget.CoordinatorLayout>
 
     <android.support.design.widget.NavigationView
         android:id="@+id/nvNavigation"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_gravity="start"
-        app:menu="@menu/navigation_menu"
-        app:headerLayout="@layout/header_navigation_view">
-
+        app:headerLayout="@layout/header_navigation_view"
+        app:menu="@menu/navigation_menu">
 
     </android.support.design.widget.NavigationView>
 

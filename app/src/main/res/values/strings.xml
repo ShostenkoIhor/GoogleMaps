@@ -1,7 +1,8 @@
 <resources>
     <string name="app_name">GoogleMaps</string>
-    <string name="search">Search</string>
     <string name="my_places">Мои места</string>
     <string name="send">Отправить</string>
+    <string name="accelerometer">Accelerometer:</string>
+    <string name="gps">GPS</string>
 
 </resources>
