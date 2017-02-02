@@ -30,6 +30,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -70,10 +71,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        fbSattelite = (FloatingActionButton) findViewById(R.id.fbSattelite);
+
         fbNormal = (FloatingActionButton) findViewById(R.id.fbNormal);
         fbHybird = (FloatingActionButton) findViewById(R.id.fbHybird);
-        fbTerrain = (FloatingActionButton) findViewById(R.id.fbTerrain);
+        fbTerrain = (FloatingActionButton) findViewById(R.id.fbMyMarker);
         mRecyclerView = (RecyclerView) findViewById(R.id.rvPlaces);
         placesJsons = new PlacesJson();
         retrofit = new Retrofit.Builder()
@@ -88,9 +89,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Places();
         initTab();
         initSearch();
-
-
-
     }
 
 
@@ -190,14 +188,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
-        fbSattelite.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
 
-
-            }
-        });
         fbNormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -221,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
         addMarker(googleMap);
+       googleMap.getUiSettings().setZoomControlsEnabled(true);
 
 
     }
@@ -307,7 +299,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             @Override
             public boolean onQueryTextChange(String newText) {
-
 
                 return false;
             }

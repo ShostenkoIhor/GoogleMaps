@@ -19,6 +19,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize">
+
                 <SearchView
                     android:id="@+id/svPlaces"
                     android:layout_width="match_parent"
@@ -32,14 +33,17 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
         </android.support.design.widget.AppBarLayout>
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
+
             <fragment
                 android:id="@+id/mapView"
                 android:name="com.google.android.gms.maps.MapFragment"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
+
             <android.support.v7.widget.RecyclerView
                 android:id="@+id/rvPlaces"
                 android:layout_width="match_parent"
@@ -53,35 +57,33 @@
             android:id="@+id/arcMenu"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="bottom|end"
+            android:layout_gravity="bottom"
             app:menu_open="arc_left"
-            app:menu_scr="@drawable/ic_cast_dark">
-
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fbSattelite"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_cast_dark" />
-
-            <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fbNormal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_cast_dark" />
+            app:menu_scr="@drawable/map">
 
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fbHybird"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_cast_dark" />
+                android:src="@drawable/earth" />
 
             <android.support.design.widget.FloatingActionButton
-                android:id="@+id/fbTerrain"
+                android:id="@+id/fbNormal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:src="@drawable/ic_cast_dark" />
-        </com.sa90.materialarcmenu.ArcMenu>
+                android:src="@drawable/earth_box" />
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbaddMarker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/map_marker_plus" />
 
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/fbMyMarker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/map_marker" />
+        </com.sa90.materialarcmenu.ArcMenu>
 
     </android.support.design.widget.CoordinatorLayout>
 
