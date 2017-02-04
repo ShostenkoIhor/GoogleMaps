@@ -5,4 +5,5 @@
     <color name="colorAccent">#ffff00</color>
     <color name="beckground">#ffffff</color>
     <color name="beckground_searchView">#e2dfdf</color>
+    <color name="text_place">#363535</color>
 </resources>

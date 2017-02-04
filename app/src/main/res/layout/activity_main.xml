@@ -18,40 +18,40 @@
             <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize">
+                android:layout_height="70dp"
+                >
+                <android.support.design.widget.TextInputLayout
+                    android:id="@+id/tilError"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:background="@drawable/background_search_view"
+                    android:textColorHint="@color/colorPrimaryDark"
+                    >
 
-                <SearchView
-                    android:id="@+id/svPlaces"
+                <AutoCompleteTextView
+                    android:id="@+id/actvPlaces"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/background_search_view" />
+                    android:maxLines="1"
+                    android:textSize="18sp"
+                    android:inputType="textAutoComplete"/>
+                </android.support.design.widget.TextInputLayout>
 
             </android.support.v7.widget.Toolbar>
 
             <android.support.design.widget.TabLayout
-                android:id="@+id/tab"
+                android:id="@+id/tabLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
+
         </android.support.design.widget.AppBarLayout>
 
-        <FrameLayout
+        <fragment
+            android:id="@+id/mapView"
+            android:name="com.google.android.gms.maps.MapFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="match_parent" />
 
-            <fragment
-                android:id="@+id/mapView"
-                android:name="com.google.android.gms.maps.MapFragment"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-            <android.support.v7.widget.RecyclerView
-                android:id="@+id/rvPlaces"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="60dp"
-                android:background="@drawable/background_search_view"
-                android:scrollbars="vertical" />
-        </FrameLayout>
 
         <com.sa90.materialarcmenu.ArcMenu
             android:id="@+id/arcMenu"
@@ -72,6 +72,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/earth_box" />
+
             <android.support.design.widget.FloatingActionButton
                 android:id="@+id/fbaddMarker"
                 android:layout_width="wrap_content"
