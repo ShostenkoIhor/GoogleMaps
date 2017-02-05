@@ -13,7 +13,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 
-public interface Places {
+public interface APIGoogle {
     @GET("maps/api/place/autocomplete/json")
     Call<PlacesJson> getData(@Query("input") String resourceInput, @Query("types") String resourceTypes, @Query("key") String resourceKey);
 }
