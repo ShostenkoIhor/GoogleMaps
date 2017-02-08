@@ -1,9 +1,7 @@
 
-package com.example;
+package com.example.ihor.googlemaps.placesJsonСoordinates;
 
 import java.util.List;
-
-import com.google.android.gms.common.api.Result;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 

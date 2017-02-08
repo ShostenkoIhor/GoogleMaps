@@ -1,43 +1,63 @@
 package com.example.ihor.googlemaps;
 
+import android.content.ContentValues;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.PersistableBundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.ImageButton;
 import android.widget.SearchView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
+import com.akexorcist.googledirection.DirectionCallback;
+import com.akexorcist.googledirection.GoogleDirection;
+import com.akexorcist.googledirection.constant.AvoidType;
+import com.akexorcist.googledirection.constant.TransportMode;
+import com.akexorcist.googledirection.model.Direction;
+import com.akexorcist.googledirection.model.Step;
+import com.akexorcist.googledirection.util.DirectionConverter;
 import com.example.ihor.googlemaps.placesJson.PlacesJson;
 import com.example.ihor.googlemaps.placesJson.Prediction;
+import com.example.ihor.googlemaps.placesJsonСoordinates.PlacesJsonСoordinates;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.UiSettings;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -49,15 +69,18 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,DirectionCallback {
+
+    @BindView(R.id.ibStartSeach)
+    ImageButton ibStartSeach;
+    @BindView(R.id.ibStopSeach)
+    ImageButton ibStopSeach;
     @BindView(R.id.tilError)
     TextInputLayout tilError;
     @BindView(R.id.toolbar)
     Toolbar toolbar;
     @BindView(R.id.nvNavigation)
     NavigationView navigationView;
-    TextView widthGPS;
-    TextView lengthGPS;
     @BindView(R.id.tabLayout)
     TabLayout tabLayout;
     @BindView(R.id.actvPlaces)
@@ -70,14 +93,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     FloatingActionButton fbHybird;
     @BindView(R.id.fbMyMarker)
     FloatingActionButton fbMyMarker;
-    private Places places;
+    private APIGoogle apiGoogle;
     private Retrofit retrofit;
     private PlacesJson placesJsons;
     private LocationManager locationManager;
     private double latitude = 0;
     private double longitude = 0;
-
-
+    private PlacesAdapter placesAdapter;
+    private PlacesJsonСoordinates placesJsonСoordinates;
+    GoogleMap googleMap;
+    private DB db;
+    private LatLng camera ;
+    private LatLng origin ;
+    private LatLng destination;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.AppDefault);
@@ -86,18 +114,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ButterKnife.bind(this);
         placesJsons = new PlacesJson();
         retrofit = new Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/")
+                .baseUrl(Constant.BASE_URL_PLACES)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
-        places = retrofit.create(Places.class);
-        initToolbar();
+        apiGoogle = retrofit.create(APIGoogle.class);
         initGPS();
         initNavigationView();
         initMapView();
         initTab();
         initSearch();
     }
-
 
     @Override
     protected void onResume() {
@@ -111,13 +137,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         locationManager.requestLocationUpdates(
                 LocationManager.NETWORK_PROVIDER, 1000 * 10, 10,
                 locationListener);
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
     }
 
     private LocationListener locationListener = new LocationListener() {
@@ -129,7 +148,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         @Override
         public void onProviderDisabled(String provider) {
-
         }
 
         @Override
@@ -157,25 +175,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 LocationManager.NETWORK_PROVIDER)) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
-            widthGPS.setText(String.valueOf(location.getLatitude()));
-            lengthGPS.setText(String.valueOf(location.getLongitude()));
+
         }
     }
-
 
     private void initGPS() {
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
     }
 
-    private void initToolbar() {
-
-    }
 
     private void initNavigationView() {
-
         View headerView = navigationView.getHeaderView(0);
-        widthGPS = (TextView) headerView.findViewById(R.id.widthGPS);
-        lengthGPS = (TextView) headerView.findViewById(R.id.lengthGPS);
+
+        navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                int id = item.getItemId();
+                if (id == R.id.menuMyPlace) {
+                    Intent intent = new Intent(MainActivity.this, RecyclerViewActivity.class);
+                    startActivity(intent);
+                }
+
+                return false;
+            }
+        });
     }
 
     private void initMapView() {
@@ -187,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(final GoogleMap googleMap) {
-
+        this.googleMap = googleMap;
         fbNormal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -197,7 +220,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         fbaddMarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                addMarkerMy(googleMap);
+                if (!(placesJsonСoordinates == null)) {
+                    writeDB(placesJsonСoordinates.getResult().getName(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng());
+                }
 
             }
         });
@@ -205,6 +230,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 googleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+                requestDirection();
             }
         });
         fbMyMarker.setOnClickListener(new View.OnClickListener() {
@@ -214,9 +240,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
-        addMarker(googleMap);
-        googleMap.getUiSettings().setZoomControlsEnabled(true);
-
 
     }
 
@@ -244,27 +267,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private void addMarker(final GoogleMap map) {
-        map.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
-            @Override
-            public void onMapClick(LatLng latLng) {
-                map.addMarker(new MarkerOptions()
-                        .position(latLng)
-                        .title("Friends")
-                        .draggable(false));
-                addPolylineMaps(new LatLng(latitude, longitude), latLng, map);
 
 
-            }
-        });
+    private void addMarkerPlaces(final String nameMarker) {
+
+        CameraPosition cameraPosition = new CameraPosition.Builder()
+                .target(new LatLng(placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng()))
+                .zoom(15)
+                .build();
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newCameraPosition(cameraPosition);
+        googleMap.animateCamera(cameraUpdate);
+
+        if (null != googleMap) {
+            googleMap.addMarker(new MarkerOptions()
+                    .position(new LatLng(placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng()))
+                    .title(nameMarker)
+                    .draggable(false)
+
+            );
+        }
+
     }
 
-    private void addPolylineMaps(LatLng my, LatLng friends, GoogleMap map) {
-        map.addPolyline(new PolylineOptions().geodesic(true)
-                .add(my)
-                .add(friends)
-        );
-    }
+
 
     private void initTab() {
         tabLayout.addTab(tabLayout.newTab().setIcon(R.drawable.taxi));
@@ -273,6 +298,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void initSearch() {
+        ibStopSeach.setVisibility(View.GONE);
         actvPlaces.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
@@ -286,10 +312,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void afterTextChanged(final Editable editable) {
 
-                if (editable.length() > 0) {
-                    places.getData(editable.toString(), "geocode", "AIzaSyDJHqsD84MdSVRMTVGolKN-YWEU4r2LFhE").enqueue(new Callback<PlacesJson>() {
+                if ((editable.length() > 3) && (editable.length() % 2 == 0)) {
+                    apiGoogle.getPlaces(editable.toString(), "geocode", Constant.API_KEY).enqueue(new Callback<PlacesJson>() {
                         @Override
-                        public void onResponse(Call<PlacesJson> call, Response<PlacesJson> response) {
+                        public void onResponse(final Call<PlacesJson> call, Response<PlacesJson> response) {
 
                             if (!(response == null)) {
                                 placesJsons = response.body();
@@ -297,42 +323,149 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     Log.wtf("test", "OK");
                                     if (!(placesJsons == null)) {
                                         updatePlaceAdapter(placesJsons);
+                                        Log.wtf("test", "updatePlaceAdapter");
                                     }
                                 } else if (placesJsons.getStatus().equals("ZERO_RESULTS")) {
                                     Log.wtf("test", "Не знайдено");
-                                    actvPlaces.setError("Не знайдено!");
+                                    ibStartSeach.setVisibility(View.GONE);
                                 } else if (placesJsons.getStatus().equals("OVER_QUERY_LIMIT")) {
                                     Log.wtf("test", "Ліміт");
+                                    ibStartSeach.setVisibility(View.GONE);
                                     actvPlaces.setError("Ліміт!!!");
+
 
                                 }
                             }
+                            ibStopSeach.setVisibility(View.VISIBLE);
+                            actvPlaces.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                @Override
+                                public void onItemClick(AdapterView<?> adapterView, View view, final int i, long l) {
+                                    actvPlaces.setText(placesJsons.getPredictions().get(i).getTerms().get(0).getValue());
+                                    actvPlaces.setError(null);
+                                    ibStartSeach.setVisibility(View.GONE);
+                                    ibStopSeach.setVisibility(View.VISIBLE);
+                                    apiGoogle.getPlacesСoordinates(placesJsons.getPredictions().get(i).getPlaceId(), Constant.API_KEY).enqueue(new Callback<PlacesJsonСoordinates>() {
+                                        @Override
+                                        public void onResponse(Call<PlacesJsonСoordinates> call, Response<PlacesJsonСoordinates> response) {
+                                            if (!(response == null)) {
+                                                placesJsonСoordinates = response.body();
+                                                if (placesJsonСoordinates.getStatus().equals("OK")) {
+
+                                                    if (!(placesJsonСoordinates == null)) {
+
+                                                        addMarkerPlaces("test");
+                                                        Log.wtf("test", "updatePlaceCoordinates");
+
+                                                    }
+                                                } else if (placesJsonСoordinates.getStatus().equals("ZERO_RESULTS")) {
+                                                    Log.wtf("test", "Не знайдено");
+
+                                                } else if (placesJsonСoordinates.getStatus().equals("OVER_QUERY_LIMIT")) {
+                                                    Log.wtf("test", "Ліміт");
+
+                                                }
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onFailure(Call<PlacesJsonСoordinates> call, Throwable t) {
+
+                                            Log.wtf("test", "retrofit Error");
+                                        }
+                                    });
+
+
+                                }
+                            });
                         }
 
                         @Override
                         public void onFailure(Call<PlacesJson> call, Throwable t) {
-
+                            Log.wtf("test", "retrofit Error");
                         }
                     });
                 }
             }
         });
 
-        actvPlaces.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+
+        ibStartSeach.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                actvPlaces.setText(placesJsons.getPredictions().get(i).getDescription());
+            public void onClick(View view) {
+                ibStartSeach.setVisibility(View.GONE);
+                ibStopSeach.setVisibility(View.VISIBLE);
+                actvPlaces.setFocusableInTouchMode(true);
             }
         });
-    }
+        ibStopSeach.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                actvPlaces.setText("");
+                actvPlaces.setError(null);
+                actvPlaces.setFocusableInTouchMode(true);
 
-    private void initRecyclerView() {
+            }
+        });
+
+        actvPlaces.setFocusable(false);
     }
 
     private void updatePlaceAdapter(PlacesJson placesJsons) {
-        actvPlaces.setAdapter(new PlacesAdapter(MainActivity.this, placesJsons.getPredictions()));
+        placesAdapter = new PlacesAdapter(MainActivity.this, placesJsons.getPredictions());
+        actvPlaces.setAdapter(placesAdapter);
+        placesAdapter.notifyDataSetChanged();
 
     }
+
+
+    private void writeDB(String name, double latitude, double longitude) {
+        ContentValues cv = new ContentValues();
+        SQLiteDatabase dbConnect = db.getInstance(this).getWritableDatabase();
+        cv.put("name", name);
+        cv.put("latitude", latitude);
+        cv.put("longitude", longitude);
+        long rowID = dbConnect.insert("mytable", null, cv);
+        Log.wtf("test", "row inserted, ID = " + rowID);
+
+
+
+
+    }
+    public void requestDirection() {
+        origin=new LatLng(latitude,longitude);
+        destination=new LatLng(placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng());
+
+        GoogleDirection.withServerKey(Constant.API_KEY)
+                .from(origin)
+                .to(destination)
+                .transportMode(TransportMode.TRANSIT)
+                .execute(this);
+    }
+
+    @Override
+    public void onDirectionSuccess(Direction direction, String rawBody) {
+        if (direction.isOK()) {
+            ArrayList<LatLng> sectionPositionList = direction.getRouteList().get(0).getLegList().get(0).getSectionPoint();
+            for (LatLng position : sectionPositionList) {
+                googleMap.addMarker(new MarkerOptions().position(position));
+            }
+
+            List<Step> stepList = direction.getRouteList().get(0).getLegList().get(0).getStepList();
+            ArrayList<PolylineOptions> polylineOptionList = DirectionConverter.createTransitPolyline(this, stepList, 5, Color.RED, 3, Color.BLUE);
+            for (PolylineOptions polylineOption : polylineOptionList) {
+                googleMap.addPolyline(polylineOption);
+            }
+
+
+        }
+    }
+
+    @Override
+    public void onDirectionFailure(Throwable t) {
+
+    }
+
+
 }
 
 
