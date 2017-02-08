@@ -69,7 +69,7 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback,DirectionCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, DirectionCallback {
 
     @BindView(R.id.ibStartSeach)
     ImageButton ibStartSeach;
@@ -101,11 +101,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private double longitude = 0;
     private PlacesAdapter placesAdapter;
     private PlacesJsonСoordinates placesJsonСoordinates;
-    GoogleMap googleMap;
+    private GoogleMap googleMap;
     private DB db;
-    private LatLng camera ;
-    private LatLng origin ;
+    private LatLng camera;
+    private LatLng origin;
     private LatLng destination;
+    private TextView widthGPS;
+    private TextView lengthGPS;
+    private  String[] type;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.AppDefault);
@@ -119,9 +124,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .build();
         apiGoogle = retrofit.create(APIGoogle.class);
         initGPS();
+        initTab();
         initNavigationView();
         initMapView();
-        initTab();
+
         initSearch();
     }
 
@@ -132,12 +138,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             return;
         }
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                1000 * 10, 10, locationListener);
-        locationManager.requestLocationUpdates(
-                LocationManager.NETWORK_PROVIDER, 1000 * 10, 10,
-                locationListener);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000 * 10, 10, locationListener);locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000 * 10, 10, locationListener);
     }
+
 
     private LocationListener locationListener = new LocationListener() {
 
@@ -166,6 +169,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     };
 
+
     private void showLocation(Location location) {
         if (location == null)
             return;
@@ -175,10 +179,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 LocationManager.NETWORK_PROVIDER)) {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
+            widthGPS.setText(String.valueOf(location.getLatitude()));
+            lengthGPS.setText(String.valueOf(location.getLongitude()));
 
         }
     }
-
     private void initGPS() {
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
     }
@@ -186,6 +191,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void initNavigationView() {
         View headerView = navigationView.getHeaderView(0);
+        widthGPS = (TextView) headerView.findViewById(R.id.widthGPS);
+        lengthGPS = (TextView) headerView.findViewById(R.id.lengthGPS);
 
         navigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -194,6 +201,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if (id == R.id.menuMyPlace) {
                     Intent intent = new Intent(MainActivity.this, RecyclerViewActivity.class);
                     startActivity(intent);
+                }
+                if (id == R.id.menuMy) {
+                    requestDirection(type[tabLayout.getTabCount()]);
                 }
 
                 return false;
@@ -230,7 +240,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 googleMap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
-                requestDirection();
+
             }
         });
         fbMyMarker.setOnClickListener(new View.OnClickListener() {
@@ -240,6 +250,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             }
         });
+
+        googleMap.getUiSettings().setZoomControlsEnabled(true);
 
     }
 
@@ -268,7 +280,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     private void addMarkerPlaces(final String nameMarker) {
 
         CameraPosition cameraPosition = new CameraPosition.Builder()
@@ -290,11 +301,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     private void initTab() {
-        tabLayout.addTab(tabLayout.newTab().setIcon(R.drawable.taxi));
-        tabLayout.addTab(tabLayout.newTab().setIcon(R.drawable.subway));
-        tabLayout.addTab(tabLayout.newTab().setIcon(R.drawable.run));
+        type= new String[]{AvoidType.FERRIES, AvoidType.HIGHWAYS, AvoidType.INDOOR};
+        TabLayout.Tab tab1=tabLayout.newTab().setIcon(R.drawable.taxi);
+        TabLayout.Tab tab2=tabLayout.newTab().setIcon(R.drawable.subway);
+        TabLayout.Tab tab3=tabLayout.newTab().setIcon(R.drawable.run);
+        tabLayout.addTab(tab1);
+        tabLayout.addTab(tab2);
+        tabLayout.addTab(tab3);
+
     }
 
     private void initSearch() {
@@ -428,17 +443,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Log.wtf("test", "row inserted, ID = " + rowID);
 
 
-
-
     }
-    public void requestDirection() {
-        origin=new LatLng(latitude,longitude);
-        destination=new LatLng(placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng());
+
+    public void requestDirection(String type) {
+        origin = new LatLng(latitude, longitude);
+        destination = new LatLng(placesJsonСoordinates.getResult().getGeometry().getLocation().getLat(), placesJsonСoordinates.getResult().getGeometry().getLocation().getLng());
 
         GoogleDirection.withServerKey(Constant.API_KEY)
                 .from(origin)
                 .to(destination)
-                .transportMode(TransportMode.TRANSIT)
+                .avoid(AvoidType.TOLLS)
                 .execute(this);
     }
 
